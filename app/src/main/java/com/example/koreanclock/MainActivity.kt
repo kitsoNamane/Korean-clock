@@ -1,6 +1,7 @@
 package com.example.koreanclock
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -39,6 +40,7 @@ import com.example.koreanclock.ui.theme.KoreanClockTheme
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -65,6 +67,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ClockScreen(modifier: Modifier = Modifier) {
     var text by remember { mutableStateOf("") }
+    var hour by remember { mutableStateOf(0) }
+    var minutes by remember { mutableStateOf(50) }
 
     Column(
         modifier = modifier
@@ -76,10 +80,15 @@ fun ClockScreen(modifier: Modifier = Modifier) {
             modifier = Modifier,
         )
 
-        Clock(0, 50, modifier = Modifier.fillMaxWidth())
+        Clock(hour, minutes, modifier = Modifier.fillMaxWidth())
 
         IconButton(
-            onClick = { /*TODO*/ }) {
+            onClick = {
+                hour = Random.nextInt(0, 13)
+                minutes = Random.nextInt(0, 61)
+                Log.d("Korean Clock", "Clicked $hour:$minutes")
+            }
+        ) {
             Icon(Icons.Rounded.Refresh,
                 modifier = Modifier.size(128.dp),
                 contentDescription = "Clock icon",
@@ -87,26 +96,27 @@ fun ClockScreen(modifier: Modifier = Modifier) {
             )
         }
 
-        TextField(
-            value = text,
-            onValueChange = { text = it },
-            label = { Text("Enter time") },
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        )
-
-        TextButton(
-            onClick = { /*TODO*/ },
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Check your answer")
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Enter time") },
+            )
+
+            TextButton(
+                onClick = { /*TODO*/ },
+            ) {
+                Text("Check your answer")
+            }
         }
     }
 }
 
 @Composable
 fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) {
-    var minutes by remember { mutableStateOf(currentMinutes) }
-    var hours by remember { mutableStateOf(currentHour) }
     Canvas(modifier = modifier
         .aspectRatio(1f)) {
         val radius = size.minDimension * 0.38f
@@ -151,28 +161,32 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
         }
 
         // Draw the hour clock hand
-        val hourAngleDegrees = (hours % 12 + minutes / 60f) * 30f
-        val hourAngle = (hourAngleDegrees - 90) * (PI / 180).toFloat()
-
-        val hourHandLength = radius * 0.5f
+        val hourAngleDegrees = (currentHour % 12) * 30 + (currentMinutes * 0.5)
+        val hourAngle = ((hourAngleDegrees - 90) * (PI / 180))
+        val hourStartX = center.x
+        val hourStartY = center.y
+        val hourEndX = center.x + 200 * cos(hourAngle).toFloat()
+        val hoursEndY = center.y + 200 * sin(hourAngle).toFloat()
         drawLine(
             color = Color.Black,
-            start = center,
-            end = Offset(center.x + hourHandLength * cos(hourAngle), center.y + hourHandLength * sin(hourAngle)),
-            strokeWidth = 3.dp.toPx()
-        )
-
-
-        // Draw the minute clock hand
-        val minutesAngleDegrees= minutes * 6f
-        val minutesAngle = (minutesAngleDegrees - 90f) * (PI / 180).toFloat()
-        val minuteHandLength = radius * 0.8f
-        drawLine(
-            color = Color.Black,
-            start = center,
-            end = Offset(center.x + minuteHandLength * cos(minutesAngle), center.y + minuteHandLength * sin(minutesAngle)),
+            start = Offset(hourStartX, hourStartY),
+            end = Offset(hourEndX, hoursEndY),
             strokeWidth = 2.dp.toPx()
         )
+
+        // Draw the minute clock hand
+        val minutesAngle= (((currentMinutes * 6) - 90F) * (PI / 180))
+        val startX = center.x
+        val startY = center.y
+        val endX = center.x + 300 * cos(minutesAngle).toFloat()
+        val endY = center.y + 300 * sin(minutesAngle).toFloat()
+        drawLine(
+            color = Color.Black,
+            start = Offset(startX, startY),
+            end = Offset(endX, endY),
+            strokeWidth = 2.dp.toPx()
+        )
+
         
         // Center circle
         drawCircle(
