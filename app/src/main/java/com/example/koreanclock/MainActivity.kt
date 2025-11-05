@@ -1,7 +1,6 @@
 package com.example.koreanclock
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,14 +10,13 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +24,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,6 +40,8 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
+
+const val TIME_TEMPLATE = "%s 시 %s 분 입니다"
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -66,9 +67,11 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ClockScreen(modifier: Modifier = Modifier) {
-    var text by remember { mutableStateOf("") }
-    var hour by remember { mutableStateOf(0) }
-    var minutes by remember { mutableStateOf(50) }
+    var correctTimeText by remember { mutableStateOf("") }
+    var playerTimeText by remember { mutableStateOf("") }
+    var hour by remember { mutableIntStateOf(0) }
+    var minutes by remember { mutableIntStateOf(0) }
+    var isEnabled by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -82,35 +85,46 @@ fun ClockScreen(modifier: Modifier = Modifier) {
 
         Clock(hour, minutes, modifier = Modifier.fillMaxWidth())
 
-        IconButton(
-            onClick = {
-                hour = Random.nextInt(0, 13)
-                minutes = Random.nextInt(0, 61)
-                Log.d("Korean Clock", "Clicked $hour:$minutes")
-            }
-        ) {
-            Icon(Icons.Rounded.Refresh,
-                modifier = Modifier.size(128.dp),
-                contentDescription = "Clock icon",
-                tint = Color.Green
-            )
-        }
-
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             TextField(
-                value = text,
-                onValueChange = { text = it },
+                enabled = isEnabled,
+                value = playerTimeText,
+                onValueChange = { playerTimeText = it },
                 label = { Text("Enter time") },
             )
 
             TextButton(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    if (playerTimeText == correctTimeText) {
+                        isEnabled = false
+                    }
+                },
             ) {
-                Text("Check your answer")
+                Text("check answer")
             }
+
+        }
+
+        FloatingActionButton(
+            onClick = {
+                if (!isEnabled) {
+                    isEnabled = true
+                }
+
+                hour = Random.nextInt(1, 13)
+                minutes = Random.nextInt(0, 60)
+                correctTimeText = String.format(TIME_TEMPLATE,
+                    Translator.KOREAN_HOURS[hour],
+                    Translator.KOREAN_MINUTES[minutes]
+                )
+            }
+        ) {
+            Icon(Icons.Rounded.Refresh,
+                contentDescription = "Clock icon",
+            )
         }
     }
 }
