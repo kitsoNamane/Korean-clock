@@ -50,21 +50,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KoreanClockTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        TopAppBar(
-                            title = { Text("Korean Clock Practice") }
-                        )
-                    }
-                ) { innerPadding ->
-                    ClockScreen(modifier = Modifier.padding(innerPadding))
-                }
+                ClockScreen()
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClockScreen(modifier: Modifier = Modifier) {
     var correctTimeText by remember { mutableStateOf("") }
@@ -73,58 +65,69 @@ fun ClockScreen(modifier: Modifier = Modifier) {
     var minutes by remember { mutableIntStateOf(0) }
     var isEnabled by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("What time is it?",
-            modifier = Modifier,
-        )
-
-        Clock(hour, minutes, modifier = Modifier.fillMaxWidth())
-
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            TextField(
-                enabled = isEnabled,
-                value = playerTimeText,
-                onValueChange = { playerTimeText = it },
-                label = { Text("Enter time") },
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = { Text("Korean Clock Practice") }
             )
-
-            TextButton(
+        },
+        floatingActionButton = {
+            FloatingActionButton(
                 onClick = {
-                    if (playerTimeText == correctTimeText) {
-                        isEnabled = false
+                    if (!isEnabled) {
+                        isEnabled = true
                     }
-                },
-            ) {
-                Text("check answer")
-            }
 
-        }
-
-        FloatingActionButton(
-            onClick = {
-                if (!isEnabled) {
-                    isEnabled = true
+                    hour = Random.nextInt(1, 13)
+                    minutes = Random.nextInt(0, 60)
+                    correctTimeText = String.format(TIME_TEMPLATE,
+                        Translator.KOREAN_HOURS[hour],
+                        Translator.KOREAN_MINUTES[minutes]
+                    )
                 }
-
-                hour = Random.nextInt(1, 13)
-                minutes = Random.nextInt(0, 60)
-                correctTimeText = String.format(TIME_TEMPLATE,
-                    Translator.KOREAN_HOURS[hour],
-                    Translator.KOREAN_MINUTES[minutes]
+            ) {
+                Icon(Icons.Rounded.Refresh,
+                    contentDescription = "Clock icon",
                 )
             }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState(), enabled = true),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(Icons.Rounded.Refresh,
-                contentDescription = "Clock icon",
+            Text("What time is it?",
+                modifier = Modifier,
             )
+
+            Clock(hour, minutes, modifier = Modifier.fillMaxWidth())
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                TextField(
+                    enabled = isEnabled,
+                    value = playerTimeText,
+                    onValueChange = { playerTimeText = it },
+                    label = { Text("Enter time") },
+                )
+
+                TextButton(
+                    onClick = {
+                        if (playerTimeText == correctTimeText) {
+                            isEnabled = false
+                        }
+                    },
+                ) {
+                    Text("check answer")
+                }
+
+            }
         }
     }
 }
@@ -177,31 +180,25 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
         // Draw the hour clock hand
         val hourAngleDegrees = (currentHour % 12) * 30 + (currentMinutes * 0.5)
         val hourAngle = ((hourAngleDegrees - 90) * (PI / 180))
-        val hourStartX = center.x
-        val hourStartY = center.y
-        val hourEndX = center.x + 200 * cos(hourAngle).toFloat()
-        val hoursEndY = center.y + 200 * sin(hourAngle).toFloat()
+        val hourHandLength = radius * 0.5f
         drawLine(
             color = Color.Black,
-            start = Offset(hourStartX, hourStartY),
-            end = Offset(hourEndX, hoursEndY),
+            start = center,
+            end = Offset(center.x + hourHandLength * cos(hourAngle).toFloat(), center.y + hourHandLength * sin(hourAngle).toFloat()),
             strokeWidth = 2.dp.toPx()
         )
 
         // Draw the minute clock hand
         val minutesAngle= (((currentMinutes * 6) - 90F) * (PI / 180))
-        val startX = center.x
-        val startY = center.y
-        val endX = center.x + 300 * cos(minutesAngle).toFloat()
-        val endY = center.y + 300 * sin(minutesAngle).toFloat()
+        val minuteHandLength = radius * 0.7f
         drawLine(
             color = Color.Black,
-            start = Offset(startX, startY),
-            end = Offset(endX, endY),
+            start = center,
+            end = Offset(center.x + minuteHandLength * cos(minutesAngle).toFloat(), center.y + minuteHandLength * sin(minutesAngle).toFloat()),
             strokeWidth = 2.dp.toPx()
         )
 
-        
+
         // Center circle
         drawCircle(
             color = Color.DarkGray,
@@ -216,15 +213,6 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
 @Composable
 fun ClockPreview() {
     KoreanClockTheme {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                TopAppBar(
-                    title = { Text("Korean Clock Practice") }
-                )
-            }
-        ) { innerPadding ->
-            ClockScreen(modifier = Modifier.padding(innerPadding))
-        }
+        ClockScreen()
     }
 }
