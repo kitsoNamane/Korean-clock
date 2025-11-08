@@ -22,7 +22,7 @@ val bodyFontFamily = FontFamily(
 
 val displayFontFamily = FontFamily(
     Font(
-        googleFont = GoogleFont("Noto Sans KR"),
+        googleFont = GoogleFont("Gowun Batang"),
         fontProvider = provider,
     )
 )

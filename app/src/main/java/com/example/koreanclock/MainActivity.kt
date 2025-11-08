@@ -1,27 +1,35 @@
 package com.example.koreanclock
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -64,16 +72,27 @@ fun ClockScreen(modifier: Modifier = Modifier) {
     var hour by remember { mutableIntStateOf(0) }
     var minutes by remember { mutableIntStateOf(0) }
     var isEnabled by remember { mutableStateOf(false) }
+    var isVisible by remember { mutableStateOf(false) }
+    var isCorrect by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { Text("Korean Clock Practice") }
+            CenterAlignedTopAppBar(
+                title = { Text("한국어 시계 연습",
+                    fontStyle = MaterialTheme.typography.titleLarge.fontStyle,
+                    fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
+                    color = MaterialTheme.colorScheme.primary
+                ) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                )
             )
         },
         floatingActionButton = {
             FloatingActionButton(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
                 onClick = {
                     if (!isEnabled) {
                         isEnabled = true
@@ -85,6 +104,9 @@ fun ClockScreen(modifier: Modifier = Modifier) {
                         Translator.KOREAN_HOURS[hour],
                         Translator.KOREAN_MINUTES[minutes]
                     )
+
+                    isCorrect = false
+                    isVisible = false
                 }
             ) {
                 Icon(Icons.Rounded.Refresh,
@@ -96,15 +118,20 @@ fun ClockScreen(modifier: Modifier = Modifier) {
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState(), enabled = true),
+                .imePadding()
+                .background(MaterialTheme.colorScheme.surface)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("What time is it?",
-                modifier = Modifier,
+            Text("시계를 보세요. 지금 몇 시예요?",
+                fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
+                fontStyle = MaterialTheme.typography.titleLarge.fontStyle,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(top = 16.dp)
             )
 
-            Clock(hour, minutes, modifier = Modifier.fillMaxWidth())
+            Clock(hour, minutes, modifier = Modifier.fillMaxWidth().padding(horizontal = 48.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -114,17 +141,50 @@ fun ClockScreen(modifier: Modifier = Modifier) {
                     enabled = isEnabled,
                     value = playerTimeText,
                     onValueChange = { playerTimeText = it },
-                    label = { Text("Enter time") },
+                    trailingIcon = { AnimatedVisibility(
+                        visible = isVisible,
+                    ) {
+                        if (isCorrect) Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Correct answer indicator",
+                            tint = Color.Green,
+                        ) else Icon(
+                            imageVector = Icons.Rounded.Clear,
+                            contentDescription = "Correct answer indicator",
+                            tint = Color.Red,
+                        )
+                    }},
+                    label = { Text("정답...",
+                        fontStyle = MaterialTheme.typography.bodyLarge.fontStyle,
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        color = MaterialTheme.colorScheme.primary,
+                    ) },
                 )
 
-                TextButton(
+                FilledTonalButton(
+                    enabled = isEnabled,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 48.dp)
+                        .padding(vertical = 4.dp),
                     onClick = {
-                        if (playerTimeText == correctTimeText) {
+                        Log.d("PlayerText", playerTimeText)
+                        Log.d("CorrectText", correctTimeText)
+                        if (playerTimeText.trimEnd() == correctTimeText) {
                             isEnabled = false
+                            isVisible = true
+                            isCorrect = true
+                        } else {
+                            isVisible = true
+                            isCorrect = false
                         }
                     },
                 ) {
-                    Text("check answer")
+                    Text("답변 확인",
+                        fontStyle = MaterialTheme.typography.bodyLarge.fontStyle,
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
 
             }
@@ -135,7 +195,8 @@ fun ClockScreen(modifier: Modifier = Modifier) {
 @Composable
 fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier
-        .aspectRatio(1f)) {
+        .aspectRatio(1f)
+    ) {
         val radius = size.minDimension * 0.38f
 
         // Clock face
@@ -150,7 +211,6 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
             center = center,
             style = Stroke(width = 2.dp.toPx())
         )
-
 
         // Draw hour and minute lines
         val tickLength = radius * 0.1f
@@ -197,7 +257,6 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
             end = Offset(center.x + minuteHandLength * cos(minutesAngle).toFloat(), center.y + minuteHandLength * sin(minutesAngle).toFloat()),
             strokeWidth = 2.dp.toPx()
         )
-
 
         // Center circle
         drawCircle(
