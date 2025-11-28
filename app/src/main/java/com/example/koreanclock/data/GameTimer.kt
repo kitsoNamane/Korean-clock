@@ -13,8 +13,7 @@ class GameTimer(
     private var _timerRunnable: Runnable? = null
     private var _isTimerRunning = false
     private var _endTime = 0L
-    private var _timer = MutableStateFlow(startTime.toInt())
-    val timer: StateFlow<Int> = _timer.asStateFlow()
+    val timer = MutableStateFlow(startTime.toInt())
 
     fun startTimer() {
         if (!_isTimerRunning) {
@@ -24,7 +23,7 @@ class GameTimer(
                 override fun run() {
                     val timeLeft = (_endTime - System.currentTimeMillis()).toInt()
                     if (timeLeft > 0) {
-                        _timer.value = timeLeft
+                        timer.value = timeLeft
                         _handler.postDelayed(this, 1000)
                     } else {
                         onFinish()
@@ -44,7 +43,7 @@ class GameTimer(
 
     fun resetTimer() {
         pauseTimer()
-        _timer.value = startTime.toInt()
+        timer.value = startTime.toInt()
     }
 
     fun onFinish() {

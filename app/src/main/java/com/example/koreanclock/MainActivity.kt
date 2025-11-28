@@ -1,7 +1,6 @@
 package com.example.koreanclock
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,10 +30,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -43,13 +38,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.koreanclock.data.GameTimer
 import com.example.koreanclock.ui.theme.KoreanClockTheme
 import com.example.koreanclock.ui.theme.onPrimaryContainerLight
 import com.example.koreanclock.ui.theme.primaryContainerLight
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.random.Random
 
 const val TIME_TEMPLATE = "%s 시 %s 분 입니다"
 
@@ -68,15 +64,10 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClockScreen(modifier: Modifier = Modifier) {
-    var correctTimeText by remember { mutableStateOf("") }
-    var playerTimeText by remember { mutableStateOf("") }
-    var hour by remember { mutableIntStateOf(0) }
-    var minutes by remember { mutableIntStateOf(0) }
-    var isEnabled by remember { mutableStateOf(false) }
-    var isVisible by remember { mutableStateOf(false) }
-    var isCorrect by remember { mutableStateOf(false) }
-
+fun ClockScreen(
+    modifier: Modifier = Modifier,
+    viewModel: AppViewModel = AppViewModel(GameTimer(15000))
+) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -96,20 +87,7 @@ fun ClockScreen(modifier: Modifier = Modifier) {
             FloatingActionButton(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 onClick = {
-                    if (!isEnabled) {
-                        isEnabled = true
-                    }
-
-                    hour = Random.nextInt(1, 13)
-                    minutes = Random.nextInt(0, 60)
-                    correctTimeText = String.format(TIME_TEMPLATE,
-                        Translator.KOREAN_HOURS[hour],
-                        Translator.KOREAN_MINUTES[minutes]
-                    )
-
-                    isCorrect = false
-                    isVisible = false
-                    playerTimeText = ""
+                    viewModel.loadNextTurn()
                 }
             ) {
                 Icon(
@@ -120,6 +98,8 @@ fun ClockScreen(modifier: Modifier = Modifier) {
             }
         }
     ) { innerPadding ->
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -138,24 +118,24 @@ fun ClockScreen(modifier: Modifier = Modifier) {
                     .padding(top = 16.dp)
             )
 
-            Clock(hour, minutes, modifier = Modifier.fillMaxWidth().padding(horizontal = 48.dp))
+            Clock(uiState.clockHour!!, uiState.clockMinutes!!, modifier = Modifier.fillMaxWidth().padding(horizontal = 48.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 TextField(
-                    enabled = isEnabled,
-                    value = playerTimeText,
-                    onValueChange = { playerTimeText = it },
+                    enabled = uiState.gameStarted,
+                    value = uiState.playerTimeText,
+                    onValueChange = { viewModel.updatePlayerTimeText(it) },
                     trailingIcon = { AnimatedVisibility(
-                        visible = isVisible,
+                        visible = uiState.guessCorrect != null || uiState.guessWrong != null,
                     ) {
-                        if (isCorrect) Icon(
+                        if (uiState.guessCorrect != null && uiState.guessCorrect!!) Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = "Correct answer indicator",
                             tint = Color.Green,
-                        ) else Icon(
+                        ) else if (uiState.guessWrong != null && uiState.guessWrong!!) Icon(
                             imageVector = Icons.Rounded.Clear,
                             contentDescription = "Correct answer indicator",
                             tint = Color.Red,
@@ -169,22 +149,13 @@ fun ClockScreen(modifier: Modifier = Modifier) {
                 )
 
                 OutlinedButton(
-                    enabled = isEnabled,
+                    enabled = uiState.gameStarted,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 48.dp)
                         .padding(vertical = 4.dp),
                     onClick = {
-                        Log.d("PlayerText", playerTimeText)
-                        Log.d("CorrectText", correctTimeText)
-                        if (playerTimeText.trimEnd() == correctTimeText) {
-                            isEnabled = false
-                            isVisible = true
-                            isCorrect = true
-                        } else {
-                            isVisible = true
-                            isCorrect = false
-                        }
+                        viewModel.checkGuess()
                     },
                 ) {
                     Text("답변 확인",
