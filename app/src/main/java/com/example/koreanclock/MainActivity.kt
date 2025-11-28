@@ -19,13 +19,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.rounded.Clear
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -41,9 +40,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.koreanclock.ui.theme.KoreanClockTheme
+import com.example.koreanclock.ui.theme.onPrimaryContainerLight
+import com.example.koreanclock.ui.theme.primaryContainerLight
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -107,10 +109,13 @@ fun ClockScreen(modifier: Modifier = Modifier) {
 
                     isCorrect = false
                     isVisible = false
+                    playerTimeText = ""
                 }
             ) {
-                Icon(Icons.Rounded.Refresh,
+                Icon(
+                    painter = painterResource(id = R.drawable.more_time_24px),
                     contentDescription = "Clock icon",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
         }
@@ -127,6 +132,8 @@ fun ClockScreen(modifier: Modifier = Modifier) {
                 fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
                 fontStyle = MaterialTheme.typography.titleLarge.fontStyle,
                 color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                softWrap = false,
                 modifier = Modifier
                     .padding(top = 16.dp)
             )
@@ -161,7 +168,7 @@ fun ClockScreen(modifier: Modifier = Modifier) {
                     ) },
                 )
 
-                FilledTonalButton(
+                OutlinedButton(
                     enabled = isEnabled,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -194,6 +201,8 @@ fun ClockScreen(modifier: Modifier = Modifier) {
 
 @Composable
 fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) {
+    val primaryContainer = primaryContainerLight
+    val onPrimaryContainer = onPrimaryContainerLight
     Canvas(modifier = modifier
         .aspectRatio(1f)
     ) {
@@ -201,12 +210,12 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
 
         // Clock face
         drawCircle(
-            color = Color.LightGray,
+            color = primaryContainer,
             radius = radius,
             center = center
         )
         drawCircle(
-            color = Color.Black,
+            color = onPrimaryContainer,
             radius = radius,
             center = center,
             style = Stroke(width = 2.dp.toPx())
@@ -230,7 +239,7 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
                 y = center.y + sin(angleRad) * radius
             )
             drawLine(
-                color = Color.Black,
+                color = onPrimaryContainer,
                 start = start,
                 end = end,
                 strokeWidth = strokeWidth
@@ -242,7 +251,7 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
         val hourAngle = ((hourAngleDegrees - 90) * (PI / 180))
         val hourHandLength = radius * 0.5f
         drawLine(
-            color = Color.Black,
+            color = onPrimaryContainer,
             start = center,
             end = Offset(center.x + hourHandLength * cos(hourAngle).toFloat(), center.y + hourHandLength * sin(hourAngle).toFloat()),
             strokeWidth = 2.dp.toPx()
@@ -252,7 +261,7 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
         val minutesAngle= (((currentMinutes * 6) - 90F) * (PI / 180))
         val minuteHandLength = radius * 0.7f
         drawLine(
-            color = Color.Black,
+            color = onPrimaryContainer,
             start = center,
             end = Offset(center.x + minuteHandLength * cos(minutesAngle).toFloat(), center.y + minuteHandLength * sin(minutesAngle).toFloat()),
             strokeWidth = 2.dp.toPx()
@@ -260,7 +269,7 @@ fun Clock(currentHour: Int, currentMinutes: Int, modifier: Modifier = Modifier) 
 
         // Center circle
         drawCircle(
-            color = Color.DarkGray,
+            color = onPrimaryContainer,
             radius = radius * 0.05f,
             center = center
         )

@@ -1,0 +1,102 @@
+package com.example.koreanclock
+
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.koreanclock.data.Game
+import com.example.koreanclock.data.GameTimer
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlin.random.Random
+
+data class AppUiState (
+    val clockHour: Int? = null,
+    val clockMinutes: Int? = null,
+    val correctGuesses: Int? = null,
+    val guessTurns: Int? = null,
+    val gameStarted: Boolean = false,
+    val guessCorrect: Boolean? = null,
+    val guessWrong: Boolean? = null,
+)
+
+class AppViewModel(
+    private val gameTimer: GameTimer
+) : ViewModel() {
+    private val _gameTimer: MutableStateFlow<Int> = gameTimer.timer as MutableStateFlow<Int>
+    private val _uiState = MutableStateFlow(AppUiState())
+
+    val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
+    val timer: StateFlow<Int> = _gameTimer.asStateFlow()
+    val playerGuess: MutableState<String> = mutableStateOf("")
+
+    init {
+        if (!_uiState.value.gameStarted) {
+            _uiState.update {
+                it.copy(
+                    clockHour = Random.nextInt(1, 13),
+                    clockMinutes = Random.nextInt(0, 60),
+                    correctGuesses = 0,
+                    guessTurns = 0,
+                    gameStarted = true,
+                )
+            }
+        }
+    }
+
+    fun startGame() {
+        _uiState.update {
+            it.copy(
+                guessTurns = 1,
+            )
+        }
+        gameTimer.startTimer()
+    }
+
+    fun checkGuess() {
+        gameTimer.pauseTimer()
+
+        val correctTimeText = String.format(TIME_TEMPLATE,
+            Translator.KOREAN_HOURS[_uiState.value.clockHour],
+            Translator.KOREAN_MINUTES[_uiState.value.clockMinutes]
+        )
+        if (correctTimeText.equals(playerGuess.value.trimEnd(), ignoreCase = true)) {
+            _uiState.update {
+                it.copy(
+                    correctGuesses = it.correctGuesses?.plus(1),
+                    guessCorrect = true,
+                    guessWrong = false,
+                )
+            }
+        } else {
+            _uiState.update {
+                it.copy(
+                    guessCorrect = false,
+                    guessWrong = true,
+                )
+            }
+        }
+    }
+
+    fun loadNextTurn() {
+        gameTimer.resetTimer()
+        _uiState.update {
+            it.copy(
+                clockHour = Random.nextInt(1, 13),
+                clockMinutes = Random.nextInt(0, 60),
+                guessTurns = it.guessTurns?.plus(1),
+            )
+        }
+        gameTimer.startTimer()
+    }
+
+    fun resetGame() {
+        gameTimer.resetTimer()
+    }
+}
+
