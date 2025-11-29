@@ -25,7 +25,6 @@ class AppViewModel(
 ) : ViewModel() {
     private val _gameTimer: MutableStateFlow<Int> = gameTimer.timer
     private val _uiState = MutableStateFlow(AppUiState())
-
     val uiState: StateFlow<AppUiState> = _uiState.asStateFlow()
     val timer: StateFlow<Int> = _gameTimer.asStateFlow()
 
@@ -50,7 +49,6 @@ class AppViewModel(
                 guessTurns = 1,
             )
         }
-        gameTimer.startTimer()
     }
 
     fun updatePlayerTimeText(newText: String) {

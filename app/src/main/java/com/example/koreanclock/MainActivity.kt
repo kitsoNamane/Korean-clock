@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ClockScreen(
     modifier: Modifier = Modifier,
-    viewModel: AppViewModel = AppViewModel(GameTimer(15000))
+    viewModel: AppViewModel = AppViewModel(GameTimer(15))
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -99,6 +99,7 @@ fun ClockScreen(
         }
     ) { innerPadding ->
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val timer by viewModel.timer.collectAsStateWithLifecycle()
 
         Column(
             modifier = Modifier
@@ -119,7 +120,15 @@ fun ClockScreen(
             )
 
             Clock(uiState.clockHour!!, uiState.clockMinutes!!, modifier = Modifier.fillMaxWidth().padding(horizontal = 48.dp))
-
+            Text(timer.toString(),
+                fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
+                fontStyle = MaterialTheme.typography.titleLarge.fontStyle,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier
+                    .padding(top = 16.dp)
+            )
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
