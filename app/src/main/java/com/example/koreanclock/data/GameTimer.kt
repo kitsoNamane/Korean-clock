@@ -16,21 +16,20 @@ class GameTimer(
 
     fun startTimer() {
         if (!_isTimerRunning) {
-            timer.value = startTimeInSeconds
-            _endTime = System.currentTimeMillis() + startTimeInSeconds * 1000
+            _endTime = System.currentTimeMillis() + startTimeInSeconds * 1000L
             _isTimerRunning = true
             _timerRunnable = object : Runnable {
                 override fun run() {
-                    val timeLeftCalculation = _endTime - System.currentTimeMillis()
-                    val timeLeft = (timeLeftCalculation / 1000).toInt()
-                    Log.d("time left", timeLeft.toString())
-                    if (timeLeft <= 0) {
+                    val timeLeftMs = _endTime - System.currentTimeMillis()
+                    if (timeLeftMs <= 0) {
                         timer.value = 0
                         onFinish()
                         return
                     }
-                    timer.value = timeLeft
-                    val delay = timeLeftCalculation % 1000
+                    val secondsLeft = ((timeLeftMs + 999) / 1000).toInt()
+                    Log.d("time left", secondsLeft.toString())
+                    timer.value = secondsLeft
+                    val delay = maxOf(1L, timeLeftMs - (secondsLeft - 1) * 1000L)
                     _handler.postDelayed(this, delay)
                 }
             }
@@ -40,7 +39,7 @@ class GameTimer(
 
     fun pauseTimer() {
         if (_isTimerRunning) {
-            _handler.removeCallbacks(_timerRunnable!!)
+            _timerRunnable?.let { _handler.removeCallbacks(it) }
             _isTimerRunning = false
         }
     }
